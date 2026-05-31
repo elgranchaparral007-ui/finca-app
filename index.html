@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control - Mi Finca</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f6f9; }
+        h2 { color: #333; margin-top: 0; }
+        
+        /* Menú de Navegación por Pestañas */
+        .menu-navegacion { display: flex; gap: 8px; background: #2c3e50; padding: 10px; border-radius: 5px 5px 0 0; }
+        .btn-pestaña { padding: 12px 20px; border: none; background: none; color: #fff; font-weight: bold; cursor: pointer; font-size: 15px; border-radius: 4px; transition: 0.3s; }
+        .btn-pestaña:hover { background: #34495e; }
+        .btn-pestaña.activo { background: #007bff; }
+        
+        /* Contenedores de Contenido */
+        .contenido-pestaña { display: none; background: #fff; padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+        
+        /* Formularios Estrictos */
+        .formulario { margin-bottom: 25px; padding: 20px; border: 2px solid #333; max-width: 500px; background: #fafafa; border-radius: 5px; }
+        label { display: block; margin-top: 12px; font-weight: bold; color: #2c3e50; }
+        input, select { display: block; margin-bottom: 5px; width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button.btn-guardar { padding: 12px; background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; font-size: 15px; border-radius: 4px; }
+        button.btn-guardar:hover { background-color: #218838; }
+        
+        /* Tablas */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; margin-bottom: 30px; }
+        th, td { border: 1px solid #333; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #e2e8f0; color: #2d3748; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+    </style>
+</head>
+<body>
+
+    <div class="menu-navegacion">
+        <button class="btn-pestaña activo" onclick="cambiarPestaña(event, 'sec-cerdos')">🐖 Cerdos</button>
+        <button class="btn-pestaña" onclick="cambiarPestaña(event, 'sec-suplementos')">💊 Suplementos y Meds</button>
+        <button class="btn-pestaña" onclick="cambiarPestaña(event, 'sec-pollos')">🐓 Pollos y Ventas</button>
+        <button class="btn-pestaña" onclick="cambiarPestaña(event, 'sec-platano')">🍌 Producción Plátano</button>
+    </div>
+
+    <div id="sec-cerdos" class="contenido-pestaña" style="display: block;">
+        <h2>Control del Inventario Porcino</h2>
+        <div class="formulario">
+            <label>Tipo de Cerdo:</label>
+            <select id="tipoCerdo">
+                <option value="Engorde">Cerdo de Engorde</option>
+                <option value="Gestación">Cerda de Gestación (Cría)</option>
+            </select>
+
+            <label>ID del Cerdo o Número de Lote:</label>
+            <input type="text" id="idCerdo" placeholder="Ej: C-01 o Lote-A" required>
+            
+            <label>Peso Actual (Kg):</label>
+            <input type="number" id="pesoCerdo" step="0.1" placeholder="Ej: 45.5" required>
+            
+            <label>Fecha de Ingreso a la Finca:</label>
+            <input type="date" id="fechaIngreso" required>
+            
+            <div id="grupoPreñez" style="display: none;">
+                <label>Fecha de Preñez (Inseminación o Monta):</label>
+                <input type="date" id="fechaPrenez">
+            </div>
+            
+            <button id="btnGuardarCerdo" class="btn-guardar">Guardar Registro Porcino</button>
+        </div>
+
+        <h3>Inventario Actual en Finca</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Propósito</th>
+                    <th>ID / Lote</th>
+                    <th>Peso Actual</th>
+                    <th>Fecha Ingreso</th>
+                    <th>Tiempo en Finca</th>
+                    <th>Fecha Preñez</th>
+                    <th>Parto Probable (114 días)</th>
+                </tr>
+            </thead>
+            <tbody id="tablaCerdosBody">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="sec-suplementos" class="contenido-pestaña">
+        <h2>Inventario de Suplementos y Medicamentos</h2>
+        <div class="formulario">
+            <label>Nombre del Producto (Ej. Mata Maleza, Vitamina):</label>
+            <input type="text" id="nombreSup" placeholder="¿Qué compraste?" required>
+
+            <label>Cantidad (Litros, Kilos, Unidades):</label>
+            <input type="number" id="cantidadSup" step="0.1" placeholder="Ej: 5" required>
+
+            <label>Precio por Unidad ($):</label>
+            <input type="number" id="precioSup" placeholder="Ej: 25000" required>
+
+            <button id="btnGuardarSup" class="btn-guardar">Registrar Compra</button>
+        </div>
+
+        <h3>Control de Stock y Gastos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Gasto Total Calculado</th>
+                </tr>
+            </thead>
+            <tbody id="tablaSupBody">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="sec-pollos" class="contenido-pestaña">
+        <h2>Inventario de Lotes de Pollos y Control de Ventas</h2>
+        <div class="formulario">
+            <label>Nombre del Cliente:</label>
+            <input type="text" id="clientePollo" placeholder="¿A quién se le vendió?" required>
+
+            <label>Cantidad de Pollos Vendidos:</label>
+            <input type="number" id="cantidadPollo" placeholder="Ej: 15" required>
+
+            <label>Peso Total (Libras o Kilos):</label>
+            <input type="number" id="pesoPollo" step="0.1" placeholder="Ej: 45.5" required>
+
+            <label>Valor Total de la Venta ($):</label>
+            <input type="number" id="totalPollo" placeholder="Ej: 150000" required>
+
+            <label>¿Cuánto Abonó el Cliente? ($):</label>
+            <input type="number" id="abonoPollo" placeholder="Si pagó completo, pon el total. Si no pagó, pon 0" required>
+
+            <button id="btnGuardarPollo" class="btn-guardar">Registrar Venta de Pollos</button>
+        </div>
+
+        <h3>Control de Ventas y Saldos Pendientes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Cantidad</th>
+                    <th>Peso Total</th>
+                    <th>Valor Total</th>
+                    <th>Abono</th>
+                    <th>Resta (Deuda)</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPollosBody">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="sec-platano" class="contenido-pestaña">
+        <h2>Control de Producción y Gastos de Plátano</h2>
+        <div class="formulario">
+            <label>Tipo de Movimiento:</label>
+            <select id="tipoPlatano">
+                <option value="Ingreso">Ingreso (Venta de Plátano)</option>
+                <option value="Egreso">Egreso (Gasto en Veneno, Abono, Trabajador)</option>
+            </select>
+
+            <label>Descripción:</label>
+            <input type="text" id="descPlatano" placeholder="Ej: Venta de 10 racimos / Compra de fertilizante" required>
+
+            <label>Valor ($):</label>
+            <input type="number" id="valorPlatano" placeholder="Ej: 80000" required>
+
+            <button id="btnGuardarPlatano" class="btn-guardar">Registrar Movimiento</button>
+        </div>
+
+        <h3>Balance de Caja - Cultivo de Plátano</h3>
+        <h3 id="balanceTotalPlatano" style="color: #007bff;">Ganancia Neta: $0</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPlatanoBody">
+                </tbody>
+        </table>
+    </div>
+
+
+    <script>
+        // Función para cambiar entre pestañas al hacer clic
+        function cambiarPestaña(evt, nombreSeccion) {
+            var contenidos = document.getElementsByClassName("contenido-pestaña");
+            for (var i = 0; i < contenidos.length; i++) { contenidos[i].style.display = "none"; }
+            
+            var botones = document.getElementsByClassName("btn-pestaña");
+            for (var i = 0; i < botones.length; i++) { botones[i].className = botones[i].className.replace(" activo", ""); }
+            
+            document.getElementById(nombreSeccion).style.display = "block";
+            evt.currentTarget.className += " activo";
+        }
+    </script>
+
+    <script type="module">
+        // Conexión directa a Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // !!! REEMPLAZA ESTO CON TUS PROPIOS DATOS DE FIREBASE !!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-R2ajzQy7j2UIKHnWDFS_I-Ux-S403qQ",
+            authDomain: "mifincaapp-323fc.firebaseapp.com",
+            projectId: "mifincaapp-323fc",
+            storageBucket: "mifincaapp-323fc.firebasestorage.app",
+            messagingSenderId: "710823067788",
+            appId: "1:710823067788:web:28d2f1a596334985ae7ba9"      
+                };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+
+        // ==========================================
+        // CEREBRO DE LA ETAPA 1: CONTROL DE CERDOS
+        // ==========================================
+        const tipoCerdo = document.getElementById('tipoCerdo');
+        const grupoPreñez = document.getElementById('grupoPreñez');
+
+        tipoCerdo.addEventListener('change', () => {
+            grupoPreñez.style.display = tipoCerdo.value === 'Gestación' ? 'block' : 'none';
+        });
+
+        document.getElementById('btnGuardarCerdo').addEventListener('click', async () => {
+            const tipo = tipoCerdo.value;
+            const id = document.getElementById('idCerdo').value;
+            const peso = document.getElementById('pesoCerdo').value;
+            const fechaIngreso = document.getElementById('fechaIngreso').value;
+            const fechaPrenez = document.getElementById('fechaPrenez').value;
+
+            if (!id || !peso || !fechaIngreso) { alert("Error: Faltan datos obligatorios."); return; }
+            if (tipo === 'Gestación' && !fechaPrenez) { alert("Error: Una cerda gestante requiere fecha de preñez."); return; }
+
+            await addDoc(collection(db, "cerdos"), {
+                tipo: tipo, idCerdo: id, peso: parseFloat(peso), fechaIngreso: fechaIngreso, fechaPrenez: tipo === 'Gestación' ? fechaPrenez : ""
+            });
+
+            alert("🐖 Registro porcino guardado con éxito.");
+            document.getElementById('idCerdo').value = '';
+            document.getElementById('pesoCerdo').value = '';
+            document.getElementById('fechaIngreso').value = '';
+            document.getElementById('fechaPrenez').value = '';
+            cargarCerdos();
+        });
+
+        async function cargarCerdos() {
+            const cuerpoTabla = document.getElementById('tablaCerdosBody');
+            cuerpoTabla.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "cerdos"));
+            const hoy = new Date();
+
+            querySnapshot.forEach((doc) => {
+                const cerdo = doc.data();
+                
+                const fIngreso = new Date(cerdo.fechaIngreso + "T00:00:00");
+                const diasEnFinca = Math.floor((hoy - fIngreso) / (1000 * 60 * 60 * 24));
+
+                let fPartoStr = "-";
+                if (cerdo.tipo === 'Gestación' && cerdo.fechaPrenez) {
+                    const fPrenez = new Date(cerdo.fechaPrenez + "T00:00:00");
+                    fPrenez.setDate(fPrenez.getDate() + 114);
+                    fPartoStr = fPrenez.toISOString().split('T')[0];
+                }
+
+                cuerpoTabla.innerHTML += `
+                    <tr>
+                        <td><strong>${cerdo.tipo}</strong></td>
+                        <td>${cerdo.idCerdo}</td>
+                        <td>${cerdo.peso} Kg</td>
+                        <td>${cerdo.fechaIngreso}</td>
+                        <td>${diasEnFinca >= 0 ? diasEnFinca : 0} días</td>
+                        <td>${cerdo.fechaPrenez || '-'}</td>
+                        <td style="color: ${fPartoStr !== '-' ? '#b83232' : '#333'}; font-weight: bold;">${fPartoStr}</td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ==========================================
+        // CEREBRO DE LA ETAPA 2: SUPLEMENTOS Y MEDS
+        // ==========================================
+        document.getElementById('btnGuardarSup').addEventListener('click', async () => {
+            const nombre = document.getElementById('nombreSup').value;
+            const cantidad = document.getElementById('cantidadSup').value;
+            const precio = document.getElementById('precioSup').value;
+
+            if (!nombre || !cantidad || !precio) { 
+                alert("Error estricto: Llena todos los datos del producto."); 
+                return; 
+            }
+
+            const gastoTotal = parseFloat(cantidad) * parseFloat(precio);
+
+            await addDoc(collection(db, "suplementos"), {
+                nombre: nombre, cantidad: parseFloat(cantidad), precio: parseFloat(precio), total: gastoTotal
+            });
+
+            alert("💊 Producto registrado y calculado con éxito.");
+            document.getElementById('nombreSup').value = '';
+            document.getElementById('cantidadSup').value = '';
+            document.getElementById('precioSup').value = '';
+            cargarSuplementos();
+        });
+
+        async function cargarSuplementos() {
+            const cuerpoTablaSup = document.getElementById('tablaSupBody');
+            cuerpoTablaSup.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "suplementos"));
+
+            querySnapshot.forEach((doc) => {
+                const sup = doc.data();
+                cuerpoTablaSup.innerHTML += `
+                    <tr>
+                        <td>${sup.nombre}</td>
+                        <td>${sup.cantidad}</td>
+                        <td>$${sup.precio}</td>
+                        <td><strong>$${sup.total}</strong></td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ==========================================
+        // CEREBRO DE LA ETAPA 3: POLLOS Y VENTAS
+        // ==========================================
+        document.getElementById('btnGuardarPollo').addEventListener('click', async () => {
+            const cliente = document.getElementById('clientePollo').value;
+            const cantidad = document.getElementById('cantidadPollo').value;
+            const peso = document.getElementById('pesoPollo').value;
+            const total = document.getElementById('totalPollo').value;
+            const abono = document.getElementById('abonoPollo').value;
+
+            if (!cliente || !cantidad || !peso || !total || !abono) { 
+                alert("Error estricto: Llena todos los datos de la venta."); return; 
+            }
+
+            const resta = parseFloat(total) - parseFloat(abono);
+
+            await addDoc(collection(db, "pollos"), {
+                cliente: cliente, cantidad: parseFloat(cantidad), peso: parseFloat(peso), 
+                total: parseFloat(total), abono: parseFloat(abono), resta: resta
+            });
+
+            alert("🐓 Venta de pollos registrada con éxito.");
+            document.getElementById('clientePollo').value = '';
+            document.getElementById('cantidadPollo').value = '';
+            document.getElementById('pesoPollo').value = '';
+            document.getElementById('totalPollo').value = '';
+            document.getElementById('abonoPollo').value = '';
+            cargarPollos();
+        });
+
+        async function cargarPollos() {
+            const cuerpoTablaPollos = document.getElementById('tablaPollosBody');
+            cuerpoTablaPollos.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "pollos"));
+
+            querySnapshot.forEach((doc) => {
+                const pollo = doc.data();
+                const colorDeuda = pollo.resta > 0 ? "color: red; font-weight: bold;" : "color: green;";
+                
+                cuerpoTablaPollos.innerHTML += `
+                    <tr>
+                        <td><strong>${pollo.cliente}</strong></td>
+                        <td>${pollo.cantidad}</td>
+                        <td>${pollo.peso}</td>
+                        <td>$${pollo.total}</td>
+                        <td>$${pollo.abono}</td>
+                        <td style="${colorDeuda}">$${pollo.resta}</td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ==========================================
+        // CEREBRO DE LA ETAPA 4: PLÁTANO
+        // ==========================================
+        document.getElementById('btnGuardarPlatano').addEventListener('click', async () => {
+            const tipo = document.getElementById('tipoPlatano').value;
+            const descripcion = document.getElementById('descPlatano').value;
+            const valor = document.getElementById('valorPlatano').value;
+
+            if (!descripcion || !valor) { alert("Error estricto: Llena descripción y valor."); return; }
+
+            await addDoc(collection(db, "platano"), {
+                tipo: tipo, descripcion: descripcion, valor: parseFloat(valor)
+            });
+
+            alert("🍌 Movimiento de plátano guardado.");
+            document.getElementById('descPlatano').value = '';
+            document.getElementById('valorPlatano').value = '';
+            cargarPlatano();
+        });
+
+        async function cargarPlatano() {
+            const cuerpoTablaPlatano = document.getElementById('tablaPlatanoBody');
+            const balanceTotalText = document.getElementById('balanceTotalPlatano');
+            cuerpoTablaPlatano.innerHTML = "";
+            
+            let totalIngresos = 0;
+            let totalEgresos = 0;
+
+            const querySnapshot = await getDocs(collection(db, "platano"));
+
+            querySnapshot.forEach((doc) => {
+                const mov = doc.data();
+                
+                if(mov.tipo === "Ingreso") { totalIngresos += mov.valor; }
+                if(mov.tipo === "Egreso") { totalEgresos += mov.valor; }
+
+                const colorFila = mov.tipo === "Ingreso" ? "color: green;" : "color: red;";
+
+                cuerpoTablaPlatano.innerHTML += `
+                    <tr>
+                        <td style="${colorFila} font-weight: bold;">${mov.tipo}</td>
+                        <td>${mov.descripcion}</td>
+                        <td>$${mov.valor}</td>
+                    </tr>
+                `;
+            });
+
+            const gananciaNeta = totalIngresos - totalEgresos;
+            const colorBalance = gananciaNeta >= 0 ? "green" : "red";
+            balanceTotalText.innerHTML = `Ganancia Neta: <span style="color: ${colorBalance};">$${gananciaNeta}</span>`;
+        }
+
+
+        // Cargar absolutamente todas las tablas de Firebase automáticamente al abrir la app
+        cargarCerdos();
+        cargarSuplementos();
+        cargarPollos();
+        cargarPlatano();
+    </script>
+</body>
+</html>
