@@ -1,0 +1,18 @@
+{
+  "name": "El Gran Chaparral - Gestión Agropecuaria",
+  "short_name": "Chaparral App",
+  "description": "Sistema de Control Operativo y Financiero para la Finca",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2318/2318341.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
