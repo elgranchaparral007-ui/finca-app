@@ -377,12 +377,12 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-          apiKey: "AIzaSyD-R2ajzQy7j2UIKHnWDFS_I-Ux-S403qQ",
-          authDomain: "mifincaapp-323fc.firebaseapp.com",
-          projectId: "mifincaapp-323fc",
-          storageBucket: "mifincaapp-323fc.firebasestorage.app",
-          messagingSenderId: "710823067788",
-          appId: "1:710823067788:web:28d2f1a596334985ae7ba9"
+            apiKey: "AIzaSyD-R2ajzQy7j2UIKHnWDFS_I-Ux-S403qQ",
+            authDomain: "mifincaapp-323fc.firebaseapp.com",
+            projectId: "mifincaapp-323fc",
+            storageBucket: "mifincaapp-323fc.firebasestorage.app",
+            messagingSenderId: "710823067788",
+            appId: "1:710823067788:web:28d2f1a596334985ae7ba9"      
         };
 
         const app = initializeApp(firebaseConfig);
@@ -454,8 +454,10 @@
 
             try {
                 await addDoc(collection(db, tab), data);
+                alert("¡Guardado con éxito en la base de datos! 👍");
             } catch (error) {
                 console.error("Error guardando datos: ", error);
+                alert("Hubo un problema al guardar. Revisa tu conexión.");
             }
         };
 
@@ -527,10 +529,11 @@
 
                 await updateDoc(docRef, updatedData);
                 closeEditModal();
+                alert("¡Registro modificado con éxito! ✏️");
             }
         }
 
-        // ESCUCHAS DE REALTIME PARA LLENAR TABLAS AUTOMÁTICAS
+        // ESCUCHAS EN TIEMPO REAL
         // 1. Cerdos
         onSnapshot(collection(db, 'cerdos'), (snapshot) => {
             let html = "";
@@ -552,7 +555,7 @@
             document.getElementById('tabla-cerdos').innerHTML = html;
         });
 
-        // 2. Insumos/Medicamentos
+        // 2. Insumos/Medicamentos (Apuntando a la colección 'suplementos')
         onSnapshot(collection(db, 'suplementos'), (snapshot) => {
             let html = "";
             snapshot.forEach((doc) => {
@@ -560,7 +563,7 @@
                 html += `<tr>
                     <td class="p-3 text-white font-medium">${d.nombre}</td>
                     <td class="p-3 text-teal-400 font-bold">${d.cantidad} ${d.unidad || 'uds'}</td>
-                    <td class="p-3 text-emerald-400">$${d.costo.toLocaleString()}</td>
+                    <td class="p-3 text-emerald-400">$${d.costo ? d.costo.toLocaleString() : 0}</td>
                     <td class="p-3 text-gray-400">${d.fecha}</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="openEditModal('suplementos', '${doc.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
@@ -577,16 +580,16 @@
             let tVentas = 0, tPagado = 0, tDeben = 0;
             snapshot.forEach((doc) => {
                 let d = doc.data();
-                tVentas += d.valor;
-                tPagado += d.pagado;
-                tDeben += d.deben;
+                tVentas += d.valor || 0;
+                tPagado += d.pagado || 0;
+                tDeben += d.deben || 0;
 
                 html += `<tr>
                     <td class="p-3 text-white font-medium">${d.cliente}</td>
                     <td class="p-3 text-gray-300">${d.cantidad} Unds / ${d.peso} Kg</td>
-                    <td class="p-3 text-emerald-400 font-bold">$${d.valor.toLocaleString()}</td>
-                    <td class="p-3 text-blue-400 font-medium">$${d.pagado.toLocaleString()} <span class="text-xs text-gray-500">(${d.metodo})</span></td>
-                    <td class="p-3 text-red-400 font-bold">$${d.deben.toLocaleString()}</td>
+                    <td class="p-3 text-emerald-400 font-bold">$${d.valor ? d.valor.toLocaleString() : 0}</td>
+                    <td class="p-3 text-blue-400 font-medium">$${d.pagado ? d.pagado.toLocaleString() : 0} <span class="text-xs text-gray-500">(${d.metodo})</span></td>
+                    <td class="p-3 text-red-400 font-bold">$${d.deben ? d.deben.toLocaleString() : 0}</td>
                     <td class="p-3 text-gray-400">${d.fecha}</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="openEditModal('pollos', '${doc.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
@@ -609,7 +612,7 @@
                     <td class="p-3 text-white font-medium">${d.tipo}</td>
                     <td class="p-3 text-gray-400">${d.calidad || 'Única'}</td>
                     <td class="p-3 text-yellow-400 font-medium">${d.cantidad}</td>
-                    <td class="p-3 text-emerald-400 font-bold">$${d.valor.toLocaleString()}</td>
+                    <td class="p-3 text-emerald-400 font-bold">$${d.valor ? d.valor.toLocaleString() : 0}</td>
                     <td class="p-3 text-gray-400">${d.fecha}</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="openEditModal('frutas', '${doc.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
@@ -628,14 +631,14 @@
             
             snapshot.forEach((doc) => {
                 let d = doc.data();
-                if(d.destino === 'Cerdos') inversionCerdos += d.costo;
-                if(d.destino === 'Pollos') inversionPollos += d.costo;
+                if(d.destino === 'Cerdos') inversionCerdos += (d.costo || 0);
+                if(d.destino === 'Pollos') inversionPollos += (d.costo || 0);
 
                 html += `<tr>
                     <td class="p-3"><span class="px-2 py-1 text-xs rounded-md ${d.destino === 'Cerdos' ? 'bg-pink-900/40 text-pink-300' : 'bg-amber-900/40 text-amber-300'}">${d.destino}</span></td>
                     <td class="p-3 text-white">${d.detalle}</td>
                     <td class="p-3 text-indigo-400 font-bold">${d.bultos} Bultos</td>
-                    <td class="p-3 text-emerald-400 font-bold">$${d.costo.toLocaleString()}</td>
+                    <td class="p-3 text-emerald-400 font-bold">$${d.costo ? d.costo.toLocaleString() : 0}</td>
                     <td class="p-3 text-gray-400">${d.fecha}</td>
                     <td class="p-3 text-center space-x-2">
                         <button onclick="openEditModal('inversion', '${doc.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
