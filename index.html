@@ -402,8 +402,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // FUNCIONES AL MENU GLOBAL DE NAVEGACION
+        // FUNCIONES AL MENU GLOBAL DE NAVEGACION CON FILTRO DE SEGURIDAD
         window.switchTab = function(tabName) {
+            if (tabName === 'pollos') {
+                let clave = prompt("Ingrese la clave de seguridad para acceder a Pollos y Ventas:");
+                if (clave !== "2007") {
+                    alert("Clave incorrecta. Acceso denegado. ❌");
+                    return; // Cancela el cambio de pestaña
+                }
+            }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
@@ -675,4 +682,3 @@
     </script>
 </body>
 </html>
-head
