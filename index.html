@@ -240,24 +240,15 @@
                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg shadow-lg cursor-pointer transition-colors">Guardar Transacción</button>
                     </form>
                 </div>
-                <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-                    <h2 class="text-xl font-bold mb-4 text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar"></i> Historial de Ventas - Detalle Monetario</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase bg-gray-900/50">
-                                    <th class="p-3">Cliente</th>
-                                    <th class="p-3">Detalle Unidades/Kg</th>
-                                    <th class="p-3">Valor Total</th>
-                                    <th class="p-3">Pagado / Canal</th>
-                                    <th class="p-3">Por Cobrar</th>
-                                    <th class="p-3">Fecha</th>
-                                    <th class="p-3 text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-pollos" class="divide-y divide-gray-700 text-sm"></tbody>
-                        </table>
-                    </div>
+                
+                <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+                    <h2 class="text-xl font-bold mb-2 text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days"></i> Historial de Ventas por Fechas
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-4">Toca cualquier fecha para desplegar u ocultar los listados de ventas de ese día.</p>
+                    
+                    <div id="historial-pollos-fechas" class="space-y-3">
+                        </div>
                 </div>
             </div>
         </div>
@@ -408,13 +399,27 @@
                 let clave = prompt("Ingrese la clave de seguridad para acceder a Pollos y Ventas:");
                 if (clave !== "2007") {
                     alert("Clave incorrecta. Acceso denegado. ❌");
-                    return; // Cancela el cambio de pestaña
+                    return; 
                 }
             }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             document.getElementById(`btn-${tabName}`).classList.add('active');
+        }
+
+        // FUNCION PARA DESPLEGAR/OCULTAR FECHAS EN EL ACORDEÓN DE POLLOS
+        window.toggleDateGroup = function(groupId) {
+            const container = document.getElementById(groupId);
+            const icon = document.getElementById('icon-' + groupId.replace('grupo-', ''));
+            
+            if(container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                if(icon) icon.classList.add('rotate-180');
+            } else {
+                container.classList.add('hidden');
+                if(icon) icon.classList.remove('rotate-180');
+            }
         }
 
         // AGREGAR DATOS GENERALES
@@ -576,7 +581,7 @@
             document.getElementById('tabla-cerdos').innerHTML = html;
         });
 
-        // 2. Insumos/Medicamentos (Apuntando a la colección 'suplementos')
+        // 2. Insumos/Medicamentos
         onSnapshot(collection(db, 'suplementos'), (snapshot) => {
             let html = "";
             snapshot.forEach((doc) => {
@@ -595,30 +600,98 @@
             document.getElementById('tabla-suplementos').innerHTML = html;
         });
 
-        // 3. Pollos
+        // 3. Pollos (LOGICA AVANZADA DE AGRUPACIÓN POR FECHAS)
         onSnapshot(collection(db, 'pollos'), (snapshot) => {
-            let html = "";
             let tVentas = 0, tPagado = 0, tDeben = 0;
+            let ventasPorFecha = {};
+
+            // Paso A: Leer datos y agruparlos en un objeto usando la fecha como Llave
             snapshot.forEach((doc) => {
                 let d = doc.data();
                 tVentas += d.valor || 0;
                 tPagado += d.pagado || 0;
                 tDeben += d.deben || 0;
 
-                html += `<tr>
-                    <td class="p-3 text-white font-medium">${d.cliente}</td>
-                    <td class="p-3 text-gray-300">${d.cantidad} Unds / ${d.peso} Kg</td>
-                    <td class="p-3 text-emerald-400 font-bold">$${d.valor ? d.valor.toLocaleString() : 0}</td>
-                    <td class="p-3 text-blue-400 font-medium">$${d.pagado ? d.pagado.toLocaleString() : 0} <span class="text-xs text-gray-500">(${d.metodo})</span></td>
-                    <td class="p-3 text-red-400 font-bold">$${d.deben ? d.deben.toLocaleString() : 0}</td>
-                    <td class="p-3 text-gray-400">${d.fecha}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditModal('pollos', '${doc.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
-                        <button onclick="deleteRecord('pollos', '${doc.id}')" class="text-red-400 hover:text-red-300 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>`;
+                let fechaKey = d.fecha || "Sin Fecha";
+                if (!ventasPorFecha[fechaKey]) {
+                    ventasPorFecha[fechaKey] = [];
+                }
+                ventasPorFecha[fechaKey].push({ id: doc.id, ...d });
             });
-            document.getElementById('tabla-pollos').innerHTML = html;
+
+            // Paso B: Ordenar las fechas de forma descendente (La más nueva primero)
+            let fechasOrdenadas = Object.keys(ventasPorFecha).sort((a, b) => b.localeCompare(a));
+
+            let htmlAcordeon = "";
+            
+            if (fechasOrdenadas.length === 0) {
+                htmlAcordeon = `<p class="text-gray-500 text-center py-6">No hay ventas registradas todavía.</p>`;
+            }
+
+            // Paso C: Construir la interfaz de acordeones colapsables
+            fechasOrdenadas.forEach((fecha) => {
+                let fechaFormateada = fecha;
+                if(fecha !== "Sin Fecha") {
+                    let partes = fecha.split('-');
+                    if(partes.length === 3) {
+                        const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+                        fechaFormateada = `${partes[2]} de ${meses[parseInt(partes[1])-1]} de ${partes[0]}`;
+                    }
+                }
+
+                let filasTabla = "";
+                ventasPorFecha[fecha].forEach((v) => {
+                    filasTabla += `
+                        <tr class="border-b border-gray-700/40 text-sm">
+                            <td class="p-3 text-white font-medium">${v.cliente}</td>
+                            <td class="p-3 text-gray-300">${v.cantidad} Unds / ${v.peso} Kg</td>
+                            <td class="p-3 text-emerald-400 font-bold">$${v.valor ? v.valor.toLocaleString() : 0}</td>
+                            <td class="p-3 text-blue-400 font-medium">$${v.pagado ? v.pagado.toLocaleString() : 0} <span class="text-xs text-gray-500">(${v.metodo})</span></td>
+                            <td class="p-3 text-red-400 font-bold">$${v.deben ? v.deben.toLocaleString() : 0}</td>
+                            <td class="p-3 text-center space-x-2">
+                                <button onclick="openEditModal('pollos', '${v.id}')" class="text-blue-400 hover:text-blue-300 cursor-pointer"><i class="fa-solid fa-edit"></i></button>
+                                <button onclick="deleteRecord('pollos', '${v.id}')" class="text-red-400 hover:text-red-300 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                htmlAcordeon += `
+                    <div class="bg-gray-900/40 rounded-xl overflow-hidden border border-gray-700 shadow-sm">
+                        <button onclick="toggleDateGroup('grupo-${fecha}')" class="w-full flex justify-between items-center p-3.5 bg-gray-700/50 hover:bg-gray-700 text-left font-bold text-emerald-400 transition-colors cursor-pointer">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-calendar text-emerald-500"></i> 
+                                ${fechaFormateada} 
+                                <span class="text-xs bg-emerald-900/80 text-emerald-300 px-2.5 py-0.5 rounded-full font-semibold">
+                                    ${ventasPorFecha[fecha].length} ${ventasPorFecha[fecha].length === 1 ? 'venta' : 'ventas'}
+                                </span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="icon-${fecha}"></i>
+                        </button>
+                        
+                        <div id="grupo-${fecha}" class="hidden bg-gray-800/20 p-2 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase bg-gray-900/40">
+                                        <th class="p-3">Cliente</th>
+                                        <th class="p-3">Detalle Unidades/Kg</th>
+                                        <th class="p-3">Valor Total</th>
+                                        <th class="p-3">Pagado / Canal</th>
+                                        <th class="p-3">Por Cobrar</th>
+                                        <th class="p-3 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-700/30">
+                                    ${filasTabla}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Actualizar la vista del historial y los indicadores financieros de arriba
+            document.getElementById('historial-pollos-fechas').innerHTML = htmlAcordeon;
             document.getElementById('kpi-pollo-total').innerText = `$${tVentas.toLocaleString()}`;
             document.getElementById('kpi-pollo-pagado').innerText = `$${tPagado.toLocaleString()}`;
             document.getElementById('kpi-pollo-deben').innerText = `$${tDeben.toLocaleString()}`;
